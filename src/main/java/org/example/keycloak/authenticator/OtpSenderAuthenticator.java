@@ -21,7 +21,10 @@ public class OtpSenderAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        otpService = new OTPService(context.getAuthenticatorConfig());
+
+        if (otpService == null) {
+            otpService = new OTPService(context.getAuthenticatorConfig(), context.getRealm().getSmtpConfig());
+        }
 
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String inputUsername = formData.getFirst("username");
@@ -98,7 +101,7 @@ public class OtpSenderAuthenticator implements Authenticator {
     @Override
     public void action(AuthenticationFlowContext context) {
         if (otpService == null) {
-            otpService = new OTPService(context.getAuthenticatorConfig());
+            otpService = new OTPService(context.getAuthenticatorConfig(), context.getRealm().getSmtpConfig());
         }
 
         String inputOtp = context.getHttpRequest().getDecodedFormParameters().getFirst("otp");

@@ -8,12 +8,38 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CustomUsernameFormFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "custom-username-form";
+    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
+
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
+        property.setName(CustomUsernameForm.SITE_KEY);
+        property.setLabel("Recaptcha Site Key");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Google Recaptcha Site Key");
+        CONFIG_PROPERTIES.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(CustomUsernameForm.SITE_SECRET);
+        property.setLabel("Recaptcha Secret");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Google Recaptcha Secret");
+        CONFIG_PROPERTIES.add(property);
+
+        property = new ProviderConfigProperty();
+        property.setName(CustomUsernameForm.USE_RECAPTCHA_NET);
+        property.setLabel("use recaptcha.net");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setHelpText("Use recaptcha.net? (or else google.com)");
+        CONFIG_PROPERTIES.add(property);
+    }
+
 
     @Override
     public String getId() {
@@ -37,12 +63,12 @@ public class CustomUsernameFormFactory implements AuthenticatorFactory {
 
     @Override
     public boolean isConfigurable() {
-        return false;
+        return true;
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return Collections.emptyList();
+        return CONFIG_PROPERTIES;
     }
 
     @Override

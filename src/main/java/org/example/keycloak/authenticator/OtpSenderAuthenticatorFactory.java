@@ -51,13 +51,7 @@ public class OtpSenderAuthenticatorFactory implements AuthenticatorFactory {
         return List.of(
                 constructOtpProperty("twilio_account_sid", "Twilio Account SID", ProviderConfigProperty.STRING_TYPE, "Twilio SID for sending SMS"),
                 constructOtpProperty("twilio_auth_token", "Twilio Auth Token", ProviderConfigProperty.STRING_TYPE, "Twilio Auth Token"),
-                constructOtpProperty("twilio_phone_number", "Twilio Phone Number", ProviderConfigProperty.STRING_TYPE, "Sender phone number for Twilio"),
-
-                constructOtpProperty("email_host", "SMTP Host", ProviderConfigProperty.STRING_TYPE, "SMTP server host"),
-                constructOtpProperty("email_port", "SMTP Port", ProviderConfigProperty.STRING_TYPE, "SMTP server port"),
-                constructOtpProperty("email_username", "SMTP Username", ProviderConfigProperty.STRING_TYPE, "SMTP username"),
-                constructOtpProperty("email_password", "SMTP Password", ProviderConfigProperty.STRING_TYPE, "SMTP password"),
-                constructOtpProperty("email_from", "From Email", ProviderConfigProperty.STRING_TYPE, "Sender email address")
+                constructOtpProperty("twilio_phone_number", "Twilio Phone Number", ProviderConfigProperty.STRING_TYPE, "Sender phone number for Twilio")
         );
     }
 

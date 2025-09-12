@@ -4,10 +4,13 @@ import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
 import jakarta.mail.MessagingException;
+import org.example.keycloak.SmtpConfigKey;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 public class OTPService {
 
@@ -19,16 +22,16 @@ public class OTPService {
 
     private SimpleMailService simpleMailService;
 
-    public OTPService(AuthenticatorConfigModel config) {
+    public OTPService(AuthenticatorConfigModel config, Map<String, String> smtpConfig) {
         this.twilioAccountSid = config.getConfig().get("twilio_account_sid");
         this.twilioAuthToken = config.getConfig().get("twilio_auth_token");
         this.twilioPhoneNumber = config.getConfig().get("twilio_phone_number");
 
-        String smtpHost = config.getConfig().get("email_host");
-        int smtpPort = Integer.parseInt(config.getConfig().get("email_port"));
-        String smtpUsername = config.getConfig().get("email_username");
-        String smtpPassword = config.getConfig().get("email_password");
-        String fromEmail = config.getConfig().get("email_from");
+        String smtpHost = smtpConfig.get(SmtpConfigKey.HOST.getKeyName());
+        String smtpPort = SmtpConfigKey.PORT.getKeyName();
+        String smtpUsername = smtpConfig.get(SmtpConfigKey.FROM.getKeyName());
+        String smtpPassword = smtpConfig.get(SmtpConfigKey.PASSWORD.getKeyName());
+        String fromEmail = smtpConfig.get(SmtpConfigKey.FROM.getKeyName());
 
         this.simpleMailService = new SimpleMailService(smtpHost, smtpPort, smtpUsername, smtpPassword, fromEmail);
     }
