@@ -1,6 +1,7 @@
 package org.example.keycloak.authenticator;
 
 import jakarta.mail.MessagingException;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import org.example.keycloak.UsernameValidatorConstant;
 import org.example.keycloak.service.OTPService;
@@ -15,23 +16,50 @@ import org.slf4j.LoggerFactory;
 
 public class OtpSenderAuthenticator implements Authenticator {
 
-    Logger logger = LoggerFactory.getLogger(OtpSenderAuthenticator.class);
+    private static final Logger logger = LoggerFactory.getLogger(OtpSenderAuthenticator.class);
     private OTPService otpService;
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         otpService = new OTPService(context.getAuthenticatorConfig());
-        UserModel user = context.getUser();
 
-        if (user == null) {
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        String inputUsername = formData.getFirst("username");
+        logger.info("Input Username: " + inputUsername);
+
+        if (inputUsername == null || inputUsername.isEmpty()) {
+            logger.warn("No username provided");
+            context.failure(AuthenticationFlowError.INVALID_USER);
+            return;
+        }
+
+        if (!inputUsername.matches(UsernameValidatorConstant.Email.getPattern()) &&
+                !inputUsername.matches(UsernameValidatorConstant.Phone.getPattern())) {
+            logger.warn("Invalid username format: " + inputUsername);
             context.failure(AuthenticationFlowError.UNKNOWN_USER);
             return;
         }
 
-        String username = user.getUsername();
+        UserModel user = context.getSession().users().getUserByUsername(context.getRealm(), inputUsername);
+        if (user == null) {
+            logger.info("User not found, creating new user: " + inputUsername);
+            user = context.getSession().users().addUser(context.getRealm(), inputUsername);
+            user.setEnabled(true);
+            context.setUser(user);
+        } else {
+            if (!user.isEnabled()) {
+                logger.warn("User is disabled: " + inputUsername);
+                user.setEnabled(true);
+                logger.info("Enabled user: " + inputUsername);
 
+            }
+            context.setUser(user);
+        }
+
+        String username = user.getUsername();
         if (extracted(context, username, user)) return;
 
+        logger.info("Creating OTP input form");
         context.challenge(createOTPInputForm(context));
     }
 
@@ -43,14 +71,17 @@ public class OtpSenderAuthenticator implements Authenticator {
             try {
                 otpService.sendEmailOTP(user.getUsername(), otp);
             } catch (MessagingException e) {
-                throw new RuntimeException(e);
+                logger.error("Failed to send email OTP", e);
+                context.failure(AuthenticationFlowError.INTERNAL_ERROR);
+                return true;
             }
         } else if (username.matches(UsernameValidatorConstant.Phone.getPattern())) {
             String otp = otpService.generateOTP();
             otpService.storeOTP(otp, context.getSession());
             otpService.sendSMSOTP(user.getUsername(), otp);
-            logger.info("Username is Sms");
+            logger.info("Username is Phone");
         } else {
+            logger.warn("Invalid username format after validation: " + username);
             context.failure(AuthenticationFlowError.INVALID_USER);
             return true;
         }
@@ -69,26 +100,26 @@ public class OtpSenderAuthenticator implements Authenticator {
         if (otpService == null) {
             otpService = new OTPService(context.getAuthenticatorConfig());
         }
-        String inputOtp = context.getHttpRequest()
-                .getDecodedFormParameters().getFirst("otp");
 
+        String inputOtp = context.getHttpRequest().getDecodedFormParameters().getFirst("otp");
         if (inputOtp == null || inputOtp.isEmpty()) {
+            logger.warn("No OTP provided");
             context.failure(AuthenticationFlowError.INVALID_CREDENTIALS);
             return;
         }
 
         if (otpService.validateOTP(inputOtp, context.getSession())) {
+            logger.info("OTP validation successful for user: " + context.getUser().getUsername());
             context.success();
-            logger.info("Succcessfully Login!");
         } else {
+            logger.warn("Invalid OTP provided");
             context.failure(AuthenticationFlowError.INVALID_CREDENTIALS);
         }
     }
 
-
     @Override
     public boolean requiresUser() {
-        return true;
+        return false;
     }
 
     @Override
@@ -104,4 +135,3 @@ public class OtpSenderAuthenticator implements Authenticator {
     public void close() {
     }
 }
-

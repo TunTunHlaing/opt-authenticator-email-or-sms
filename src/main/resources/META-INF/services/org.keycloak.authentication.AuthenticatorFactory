@@ -1,1 +1,2 @@
+org.example.keycloak.form.CustomUsernameFormFactory
 org.example.keycloak.authenticator.OtpSenderAuthenticatorFactory
